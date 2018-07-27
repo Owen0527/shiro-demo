@@ -6,14 +6,17 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.session.mgt.DefaultSessionManager;
-import org.apache.shiro.session.mgt.eis.SessionDAO;
+import org.apache.shiro.spring.LifecycleBeanPostProcessor;
+import org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
 import org.crazycake.shiro.RedisCacheManager;
 import org.crazycake.shiro.RedisManager;
 import org.crazycake.shiro.RedisSessionDAO;
+import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,13 +29,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Slf4j
 public class ShiroConfig {
-    @Value("${spring.redis.shiro.host}")
+    @Value("${spring.redis.host:}")
     private String host;
-    @Value("${spring.redis.shiro.port}")
+    @Value("${spring.redis.port:6379}")
     private int port;
-    @Value("${spring.redis.shiro.timeout}")
+    @Value("${spring.redis.timeout:0}")
     private int timeout;
-    @Value("${spring.redis.shiro.password}")
+    @Value("${spring.redis.password:}")
     private String password;
 
     @Bean
@@ -44,7 +47,8 @@ public class ShiroConfig {
         Map<String,String> filterChainDefinitionMap = new LinkedHashMap<String,String>();
 
         //配置退出 过滤器,其中的具体的退出代码Shiro已经替我们实现了
-        filterChainDefinitionMap.put("/rest/shiro/v1/logout", "logout");
+        filterChainDefinitionMap.put("/rest/shiro/logout", "logout");
+        filterChainDefinitionMap.put("/rest/shiro/perm", "authc, perms[shiro:view]");
         //<!-- 过滤链定义，从上向下顺序执行，一般将/**放在最为下边 -->:这是一个坑呢，一不小心代码就不好使了;
         //<!-- authc:所有url都必须认证通过才可以访问; anon:所有url都都可以匿名访问-->
         filterChainDefinitionMap.put("/rest/**", "authc");
@@ -99,23 +103,9 @@ public class ShiroConfig {
      */
     public DefaultSessionManager SessionManager() {
         DefaultWebSessionManager sessionManager = new DefaultWebSessionManager();
-        sessionManager.setSessionDAO(sessionDAO());
+        sessionManager.setSessionDAO(redisSessionDAO());
         sessionManager.setCacheManager(cacheManager());
         return sessionManager;
-    }
-
-    @Bean
-    public SessionDAO sessionDAO() {
-//        if (1 == isRedisCache) {
-            RedisSessionDAO redisSessionDAO = new RedisSessionDAO();
-            redisSessionDAO.setRedisManager(redisManager());
-            log.info("设置redisSessionDAO");
-            return redisSessionDAO;
-//        } else {
-//            MemorySessionDAO sessionDAO = new MemorySessionDAO();
-//            log.info("设置MemorySessionDAO");
-//            return sessionDAO;
-//        }
     }
 
 
@@ -162,4 +152,25 @@ public class ShiroConfig {
         redisSessionDAO.setRedisManager(redisManager());
         return redisSessionDAO;
     }
+
+    /*@Bean(name = "lifecycleBeanPostProcessor")
+    public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
+        return new LifecycleBeanPostProcessor();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
+        DefaultAdvisorAutoProxyCreator daap = new DefaultAdvisorAutoProxyCreator();
+        daap.setProxyTargetClass(true);
+        return daap;
+    }
+
+    @Bean
+    public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(DefaultWebSecurityManager securityManager) {
+        AuthorizationAttributeSourceAdvisor aasa = new AuthorizationAttributeSourceAdvisor();
+        aasa.setSecurityManager(securityManager);
+        return aasa;
+    }*/
+
 }

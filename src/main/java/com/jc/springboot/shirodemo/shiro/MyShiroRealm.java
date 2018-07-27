@@ -12,6 +12,7 @@ import org.apache.shiro.authz.SimpleAuthorizationInfo;
 import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.SimplePrincipalCollection;
+import org.apache.shiro.util.ByteSource;
 
 /**
  * MyShiroRealm
@@ -56,19 +57,23 @@ public class MyShiroRealm extends AuthorizingRealm {
         //实际项目中，这里可以根据实际情况做缓存，如果不做，Shiro自己也是有时间间隔机制，2分钟内不会重复执行该方法
         CachedUser cachedUser = new CachedUser();
         cachedUser.setLoginName(username);
-        cachedUser.setUserId(1L);
+        cachedUser.setUserId(2L);
         String salt = "111111";
         String password = PasswordUtils.simpleHashString(credentials, salt);
         log.info("credientials:{}, saltPw:{}", credentials, password);
-        /*return new SimpleAuthenticationInfo(
-            cachedUser, //用户缓存信息
-            password, //密码
-            ByteSource.Util.bytes(salt),//salt
-            getName()  //realm name
-        );*/
         return new SimpleAuthenticationInfo(
+            //用户缓存信息
+            cachedUser,
+            //密码
+            password,
+            //salt
+            ByteSource.Util.bytes(salt),
+            //realm name
+            getName()
+        );
+        /*return new SimpleAuthenticationInfo(
             new SimplePrincipalCollection(cachedUser, username),
             credentials
-        );
+        );*/
     }
 }

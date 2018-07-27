@@ -40,6 +40,12 @@ public class ShiroPublicController extends BaseController {
         return buildNoPermissionResponse();
     }
 
+    @GetMapping("/")
+    public ResultModel home() {
+        log.info("home");
+        return buildSuccessResponse("home");
+    }
+
     @GetMapping("/index")
     public ResultModel index() {
         log.info("index");
