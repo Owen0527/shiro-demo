@@ -8,7 +8,6 @@ import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -28,6 +27,13 @@ public class ShiroController extends BaseController {
 
     @GetMapping("/perm")
     public ResultModel perm() {
+        boolean perm = SecurityUtils.getSubject().isPermitted("perm");
+        boolean[] permitted = SecurityUtils.getSubject().isPermitted(new String[]{"perm"});
+        boolean hasRole = SecurityUtils.getSubject().hasRole("perm");
+
+        SecurityUtils.getSubject().checkPermission("perm");
+        SecurityUtils.getSubject().checkRole("role");
+
         return buildSuccessResponse("有权限操作");
     }
 
